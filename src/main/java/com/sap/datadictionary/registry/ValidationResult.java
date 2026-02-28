@@ -11,6 +11,11 @@ import java.util.List;
  * reference that would cause failures) or a {@link Severity#WARNING}
  * (a potential issue that may deserve attention).
  * </p>
+ * <p>
+ * Findings are added by {@link ConsistencyValidator}; the mutation methods
+ * are intentionally package-private to keep this class read-only for
+ * external consumers.
+ * </p>
  */
 public class ValidationResult {
 

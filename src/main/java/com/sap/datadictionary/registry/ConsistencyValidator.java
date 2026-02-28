@@ -26,7 +26,8 @@ import java.util.Set;
  *       in its base tables, and all base tables are registered.</li>
  *   <li>Every {@link SearchHelp} only references fields that exist
  *       in its selection-method table.</li>
- *   <li>Cycle / dependency detection among tables referenced by views.</li>
+ *   <li>Completeness warnings for views with no base tables or selected
+ *       fields, and tables with no fields defined.</li>
  * </ul>
  */
 public class ConsistencyValidator {
@@ -192,14 +193,10 @@ public class ConsistencyValidator {
     }
 
     /**
-     * Detect circular dependencies among views.
+     * Check for incomplete definitions that may indicate modelling errors.
      * <p>
-     * In this model, views reference tables but not other views, so true
-     * cycles are unlikely. This check validates that no table is used as
-     * a base table in a view while also being implicitly dependent on
-     * that view (which would indicate a modelling error). Currently this
-     * reports a warning if a view selects zero fields (empty projection)
-     * or has no base tables, since such definitions are likely incomplete.
+     * Reports warnings for views with no base tables, views with base
+     * tables but no selected fields, and tables with no fields defined.
      * </p>
      */
     void validateDependencyCycles(ValidationResult result) {
