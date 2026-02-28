@@ -89,14 +89,14 @@ src/
 | Unit + integration tests (JUnit 5) | ✅ Done |
 | Gradle build with Java 21 toolchain | ✅ Done |
 
-### Milestone 2 – Persistence & Serialization
+### Milestone 2 ✅ – Persistence & Serialization
 > Persist dictionary metadata so definitions survive restarts.
 
 | Deliverable | Status |
 |---|---|
-| JSON/YAML serialization of all DDIC objects | ⬜ Planned |
-| File-based repository (load/save dictionary to disk) | ⬜ Planned |
-| Import/export of dictionary definitions | ⬜ Planned |
+| JSON serialization of all DDIC objects (`DictionarySerializer`) | ✅ Done |
+| File-based repository (load/save dictionary to disk) (`DictionaryRepository`) | ✅ Done |
+| Import/export of dictionary definitions | ✅ Done |
 
 ### Milestone 3 – Validation & Consistency Checks
 > Ensure referential integrity across the three schema layers.
