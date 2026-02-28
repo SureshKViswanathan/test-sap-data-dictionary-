@@ -98,15 +98,15 @@ src/
 | File-based repository (load/save dictionary to disk) (`DictionaryRepository`) | ✅ Done |
 | Import/export of dictionary definitions | ✅ Done |
 
-### Milestone 3 – Validation & Consistency Checks
+### Milestone 3 ✅ – Validation & Consistency Checks
 > Ensure referential integrity across the three schema layers.
 
 | Deliverable | Status |
 |---|---|
-| Validate that every `DataElement` references a registered `Domain` | ⬜ Planned |
-| Validate that every `FieldDefinition` references a registered `DataElement` | ⬜ Planned |
-| Validate that every `ViewDefinition` only references existing table fields | ⬜ Planned |
-| Cycle / dependency detection | ⬜ Planned |
+| Validate that every `DataElement` references a registered `Domain` | ✅ Done |
+| Validate that every `FieldDefinition` references a registered `DataElement` | ✅ Done |
+| Validate that every `ViewDefinition` only references existing table fields | ✅ Done |
+| Cycle / dependency detection | ✅ Done |
 
 ### Milestone 4 – DDL Generation
 > Generate SQL DDL from the conceptual schema.
