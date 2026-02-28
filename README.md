@@ -50,13 +50,18 @@ src/
 │   ├── conceptual/        ← Conceptual Schema (TableDefinition, FieldDefinition, Structure)
 │   ├── external/          ← External Schema (ViewDefinition, SearchHelp, LockObject)
 │   ├── registry/          ← Central DataDictionary registry
-│   └── ddl/               ← DDL Generation (DdlGenerator, SqlDialect)
+│   ├── ddl/               ← DDL Generation (DdlGenerator, SqlDialect)
+│   └── api/               ← REST API Controllers
+├── main/resources/
+│   ├── static/            ← Web UI (index.html)
+│   └── application.properties
 └── test/java/com/sap/datadictionary/
     ├── internal/          ← Unit tests for Internal Schema
     ├── conceptual/        ← Unit tests for Conceptual Schema
     ├── external/          ← Unit tests for External Schema
     ├── registry/          ← Integration tests (full 3-schema scenario)
-    └── ddl/               ← Unit tests for DDL generation
+    ├── ddl/               ← Unit tests for DDL generation
+    └── api/               ← REST API integration tests
 ```
 
 ---
@@ -119,14 +124,67 @@ src/
 | SQL `CREATE VIEW` generation from `ViewDefinition` | ✅ Done |
 | Dialect support (PostgreSQL, H2, SAP HANA) | ✅ Done |
 
-### Milestone 5 – REST API & UI
+### Milestone 5 ✅ – REST API & UI
 > Expose the Data Dictionary via a lightweight service.
 
 | Deliverable | Status |
 |---|---|
-| REST API for CRUD operations on DDIC objects | ⬜ Planned |
-| Simple web UI for browsing the dictionary | ⬜ Planned |
-| Where-used analysis (find all tables using a given Domain) | ⬜ Planned |
+| REST API for CRUD operations on DDIC objects | ✅ Done |
+| Simple web UI for browsing the dictionary | ✅ Done |
+| Where-used analysis (find all tables using a given Domain) | ✅ Done |
+
+---
+
+## REST API Endpoints
+
+Once the application is running (`./gradlew bootRun`), the following endpoints are available at `http://localhost:8080`:
+
+### DDIC Object CRUD
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/domains` | List all Domains |
+| `GET` | `/api/domains/{name}` | Get a Domain by name |
+| `POST` | `/api/domains` | Create a new Domain |
+| `GET` | `/api/data-elements` | List all Data Elements |
+| `GET` | `/api/data-elements/{name}` | Get a Data Element by name |
+| `POST` | `/api/data-elements` | Create a new Data Element |
+| `GET` | `/api/tables` | List all Tables |
+| `GET` | `/api/tables/{name}` | Get a Table by name |
+| `POST` | `/api/tables` | Create a new Table |
+| `GET` | `/api/structures` | List all Structures |
+| `GET` | `/api/structures/{name}` | Get a Structure by name |
+| `POST` | `/api/structures` | Create a new Structure |
+| `GET` | `/api/views` | List all Views |
+| `GET` | `/api/views/{name}` | Get a View by name |
+| `POST` | `/api/views` | Create a new View |
+| `GET` | `/api/search-helps` | List all Search Helps |
+| `GET` | `/api/search-helps/{name}` | Get a Search Help by name |
+| `POST` | `/api/search-helps` | Create a new Search Help |
+| `GET` | `/api/lock-objects` | List all Lock Objects |
+| `GET` | `/api/lock-objects/{name}` | Get a Lock Object by name |
+| `POST` | `/api/lock-objects` | Create a new Lock Object |
+
+### Where-Used Analysis
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/where-used/domains/{name}` | Find all objects using a Domain |
+| `GET` | `/api/where-used/data-elements/{name}` | Find all Tables/Structures using a Data Element |
+| `GET` | `/api/where-used/tables/{name}` | Find all Views/SearchHelps/LockObjects using a Table |
+
+### DDL Generation
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/ddl/tables/{name}?dialect=POSTGRESQL` | Generate CREATE TABLE DDL |
+| `GET` | `/api/ddl/views/{name}?dialect=H2` | Generate CREATE VIEW DDL |
+
+Supported dialects: `POSTGRESQL`, `H2`, `HANA`
+
+### Web UI
+
+Open `http://localhost:8080` in a browser to access the Data Dictionary Browser.
 
 ---
 
