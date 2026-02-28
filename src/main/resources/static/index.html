@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Data Dictionary Browser</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        header { background: #0a6ed1; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 20px; font-weight: 600; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+        nav button { padding: 8px 16px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        nav button.active { background: #0a6ed1; color: #fff; border-color: #0a6ed1; }
+        .panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; }
+        .panel h2 { margin-bottom: 16px; font-size: 18px; color: #0a6ed1; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #555; }
+        tr:hover { background: #f0f7ff; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #e8f4fd; color: #0a6ed1; }
+        .detail-view { margin-top: 16px; }
+        .detail-view h3 { margin-bottom: 12px; font-size: 16px; }
+        .detail-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px; font-size: 14px; }
+        .detail-grid dt { font-weight: 600; color: #555; }
+        .detail-grid dd { color: #333; }
+        .where-used { margin-top: 16px; background: #f8f9fa; padding: 12px; border-radius: 4px; }
+        .where-used h4 { margin-bottom: 8px; font-size: 14px; color: #666; }
+        .where-used ul { list-style: none; padding: 0; }
+        .where-used li { padding: 4px 0; font-size: 13px; }
+        .where-used li::before { content: "→ "; color: #0a6ed1; }
+        .back-btn { margin-bottom: 12px; padding: 6px 12px; font-size: 13px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; }
+        .ddl-block { margin-top: 16px; }
+        .ddl-block select { margin-bottom: 8px; padding: 6px; font-size: 13px; }
+        .ddl-block pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 4px; overflow-x: auto; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        <h1>SAP Data Dictionary Browser</h1>
+    </header>
+    <div class="container">
+        <nav id="nav">
+            <button class="active" data-type="domains">Domains</button>
+            <button data-type="data-elements">Data Elements</button>
+            <button data-type="tables">Tables</button>
+            <button data-type="structures">Structures</button>
+            <button data-type="views">Views</button>
+            <button data-type="search-helps">Search Helps</button>
+            <button data-type="lock-objects">Lock Objects</button>
+        </nav>
+        <div class="panel" id="content">
+            <p class="empty">Loading…</p>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        let currentType = 'domains';
+
+        // Navigation
+        document.getElementById('nav').addEventListener('click', e => {
+            if (e.target.tagName !== 'BUTTON') return;
+            document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentType = e.target.dataset.type;
+            loadList(currentType);
+        });
+
+        async function api(path) {
+            const res = await fetch(API + path);
+            return res.ok ? res.json() : null;
+        }
+
+        function loadList(type) {
+            switch (type) {
+                case 'domains': return renderDomains();
+                case 'data-elements': return renderDataElements();
+                case 'tables': return renderTables();
+                case 'structures': return renderStructures();
+                case 'views': return renderViews();
+                case 'search-helps': return renderSearchHelps();
+                case 'lock-objects': return renderLockObjects();
+            }
+        }
+
+        function setContent(html) {
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function clickableRow(type, name) {
+            return ` style="cursor:pointer" onclick="showDetail('${type}','${name}')"`;
+        }
+
+        // ---- List views ----
+
+        async function renderDomains() {
+            const data = await api('/domains');
+            if (!data || data.length === 0) { setContent('<p class="empty">No domains registered.</p>'); return; }
+            let html = '<h2>Domains</h2><table><tr><th>Name</th><th>Data Type</th><th>Length</th><th>Decimals</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('domains', d.name)}><td>${d.name}</td><td><span class="badge">${d.dataType}</span></td><td>${d.length}</td><td>${d.decimals}</td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderDataElements() {
+            const data = await api('/data-elements');
+            if (!data || data.length === 0) { setContent('<p class="empty">No data elements registered.</p>'); return; }
+            let html = '<h2>Data Elements</h2><table><tr><th>Name</th><th>Domain</th><th>Short Label</th><th>Long Label</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('data-elements', d.name)}><td>${d.name}</td><td>${d.domainName}</td><td>${d.shortLabel || ''}</td><td>${d.longLabel || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderTables() {
+            const data = await api('/tables');
+            if (!data || data.length === 0) { setContent('<p class="empty">No tables registered.</p>'); return; }
+            let html = '<h2>Tables</h2><table><tr><th>Name</th><th>Fields</th><th>Delivery Class</th><th>Buffered</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('tables', d.tableName)}><td>${d.tableName}</td><td>${d.fields.length}</td><td><span class="badge">${d.deliveryClass}</span></td><td>${d.buffered ? 'Yes' : 'No'}</td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderStructures() {
+            const data = await api('/structures');
+            if (!data || data.length === 0) { setContent('<p class="empty">No structures registered.</p>'); return; }
+            let html = '<h2>Structures</h2><table><tr><th>Name</th><th>Fields</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('structures', d.structureName)}><td>${d.structureName}</td><td>${d.fields.length}</td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderViews() {
+            const data = await api('/views');
+            if (!data || data.length === 0) { setContent('<p class="empty">No views registered.</p>'); return; }
+            let html = '<h2>Views</h2><table><tr><th>Name</th><th>Type</th><th>Base Tables</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('views', d.viewName)}><td>${d.viewName}</td><td><span class="badge">${d.viewType}</span></td><td>${d.baseTableNames.join(', ')}</td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderSearchHelps() {
+            const data = await api('/search-helps');
+            if (!data || data.length === 0) { setContent('<p class="empty">No search helps registered.</p>'); return; }
+            let html = '<h2>Search Helps</h2><table><tr><th>Name</th><th>Selection Method</th><th>Display Fields</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('search-helps', d.name)}><td>${d.name}</td><td>${d.selectionMethodName || ''}</td><td>${d.displayFields.join(', ')}</td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        async function renderLockObjects() {
+            const data = await api('/lock-objects');
+            if (!data || data.length === 0) { setContent('<p class="empty">No lock objects registered.</p>'); return; }
+            let html = '<h2>Lock Objects</h2><table><tr><th>Name</th><th>Primary Table</th><th>Lock Mode</th><th>Description</th></tr>';
+            data.forEach(d => {
+                html += `<tr${clickableRow('lock-objects', d.name)}><td>${d.name}</td><td>${d.primaryTableName}</td><td><span class="badge">${d.lockMode}</span></td><td>${d.description || ''}</td></tr>`;
+            });
+            html += '</table>';
+            setContent(html);
+        }
+
+        // ---- Detail views ----
+
+        async function showDetail(type, name) {
+            const data = await api(`/${type}/${encodeURIComponent(name)}`);
+            if (!data) { setContent('<p class="empty">Not found.</p>'); return; }
+
+            let html = `<button class="back-btn" onclick="loadList('${type}')">← Back to list</button>`;
+
+            switch (type) {
+                case 'domains': html += domainDetail(data); break;
+                case 'data-elements': html += dataElementDetail(data); break;
+                case 'tables': html += tableDetail(data); break;
+                case 'structures': html += structureDetail(data); break;
+                case 'views': html += viewDetail(data); break;
+                case 'search-helps': html += searchHelpDetail(data); break;
+                case 'lock-objects': html += lockObjectDetail(data); break;
+            }
+
+            setContent(html);
+
+            // Load where-used info
+            const whereUsedType = type === 'domains' ? 'domains'
+                : type === 'data-elements' ? 'data-elements'
+                : type === 'tables' ? 'tables' : null;
+
+            if (whereUsedType) {
+                const wu = await api(`/where-used/${whereUsedType}/${encodeURIComponent(name)}`);
+                if (wu && Object.keys(wu).length > 0) {
+                    const el = document.getElementById('where-used');
+                    if (el) {
+                        let wuHtml = '<h4>Where Used</h4>';
+                        for (const [category, items] of Object.entries(wu)) {
+                            wuHtml += `<div><strong>${category}:</strong><ul>`;
+                            items.forEach(i => wuHtml += `<li>${i}</li>`);
+                            wuHtml += '</ul></div>';
+                        }
+                        el.innerHTML = wuHtml;
+                    }
+                }
+            }
+
+            // Load DDL if table or view
+            if (type === 'tables' || type === 'views') {
+                loadDdl(type, name, 'POSTGRESQL');
+            }
+        }
+
+        async function loadDdl(type, name, dialect) {
+            const ddlType = type === 'tables' ? 'tables' : 'views';
+            const data = await api(`/ddl/${ddlType}/${encodeURIComponent(name)}?dialect=${dialect}`);
+            const el = document.getElementById('ddl-output');
+            if (el && data && data.ddl) {
+                el.textContent = data.ddl;
+            }
+        }
+
+        function domainDetail(d) {
+            return `<div class="detail-view"><h3>Domain: ${d.name}</h3>
+                <dl class="detail-grid">
+                    <dt>Data Type</dt><dd>${d.dataType}</dd>
+                    <dt>Length</dt><dd>${d.length}</dd>
+                    <dt>Decimals</dt><dd>${d.decimals}</dd>
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                    ${d.fixedValues ? `<dt>Fixed Values</dt><dd>${d.fixedValues.join(', ')}</dd>` : ''}
+                </dl>
+                <div class="where-used" id="where-used"><h4>Where Used</h4><p style="font-size:13px;color:#999">No usages found.</p></div>
+            </div>`;
+        }
+
+        function dataElementDetail(d) {
+            return `<div class="detail-view"><h3>Data Element: ${d.name}</h3>
+                <dl class="detail-grid">
+                    <dt>Domain</dt><dd>${d.domainName}</dd>
+                    <dt>Short Label</dt><dd>${d.shortLabel || '–'}</dd>
+                    <dt>Medium Label</dt><dd>${d.mediumLabel || '–'}</dd>
+                    <dt>Long Label</dt><dd>${d.longLabel || '–'}</dd>
+                    <dt>Documentation</dt><dd>${d.documentation || '–'}</dd>
+                </dl>
+                <div class="where-used" id="where-used"><h4>Where Used</h4><p style="font-size:13px;color:#999">No usages found.</p></div>
+            </div>`;
+        }
+
+        function tableDetail(d) {
+            let fieldsHtml = '<table><tr><th>Field</th><th>Data Element</th><th>Key</th><th>Nullable</th></tr>';
+            d.fields.forEach(f => {
+                fieldsHtml += `<tr><td>${f.fieldName}</td><td>${f.dataElementName}</td><td>${f.keyField ? '✓' : ''}</td><td>${f.nullable ? '✓' : ''}</td></tr>`;
+            });
+            fieldsHtml += '</table>';
+
+            return `<div class="detail-view"><h3>Table: ${d.tableName}</h3>
+                <dl class="detail-grid">
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                    <dt>Delivery Class</dt><dd>${d.deliveryClass}</dd>
+                    <dt>Buffered</dt><dd>${d.buffered ? 'Yes' : 'No'}</dd>
+                </dl>
+                <h3 style="margin-top:16px">Fields</h3>${fieldsHtml}
+                <div class="where-used" id="where-used"><h4>Where Used</h4><p style="font-size:13px;color:#999">No usages found.</p></div>
+                <div class="ddl-block"><h3 style="margin-top:16px">Generated DDL</h3>
+                    <select onchange="loadDdl('tables','${d.tableName}',this.value)">
+                        <option value="POSTGRESQL">PostgreSQL</option>
+                        <option value="H2">H2</option>
+                        <option value="HANA">SAP HANA</option>
+                    </select>
+                    <pre id="ddl-output">Loading…</pre>
+                </div>
+            </div>`;
+        }
+
+        function structureDetail(d) {
+            let fieldsHtml = '<table><tr><th>Field</th><th>Data Element</th><th>Key</th><th>Nullable</th></tr>';
+            d.fields.forEach(f => {
+                fieldsHtml += `<tr><td>${f.fieldName}</td><td>${f.dataElementName}</td><td>${f.keyField ? '✓' : ''}</td><td>${f.nullable ? '✓' : ''}</td></tr>`;
+            });
+            fieldsHtml += '</table>';
+
+            return `<div class="detail-view"><h3>Structure: ${d.structureName}</h3>
+                <dl class="detail-grid">
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                </dl>
+                <h3 style="margin-top:16px">Fields</h3>${fieldsHtml}
+            </div>`;
+        }
+
+        function viewDetail(d) {
+            return `<div class="detail-view"><h3>View: ${d.viewName}</h3>
+                <dl class="detail-grid">
+                    <dt>View Type</dt><dd>${d.viewType}</dd>
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                    <dt>Base Tables</dt><dd>${d.baseTableNames.join(', ')}</dd>
+                    <dt>Selected Fields</dt><dd>${d.selectedFields.length > 0 ? d.selectedFields.join(', ') : '*'}</dd>
+                </dl>
+                <div class="ddl-block"><h3 style="margin-top:16px">Generated DDL</h3>
+                    <select onchange="loadDdl('views','${d.viewName}',this.value)">
+                        <option value="POSTGRESQL">PostgreSQL</option>
+                        <option value="H2">H2</option>
+                        <option value="HANA">SAP HANA</option>
+                    </select>
+                    <pre id="ddl-output">Loading…</pre>
+                </div>
+            </div>`;
+        }
+
+        function searchHelpDetail(d) {
+            return `<div class="detail-view"><h3>Search Help: ${d.name}</h3>
+                <dl class="detail-grid">
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                    <dt>Selection Method</dt><dd>${d.selectionMethodName || '–'}</dd>
+                    <dt>Display Fields</dt><dd>${d.displayFields.join(', ') || '–'}</dd>
+                    <dt>Export Fields</dt><dd>${d.exportFields.join(', ') || '–'}</dd>
+                </dl>
+            </div>`;
+        }
+
+        function lockObjectDetail(d) {
+            return `<div class="detail-view"><h3>Lock Object: ${d.name}</h3>
+                <dl class="detail-grid">
+                    <dt>Description</dt><dd>${d.description || '–'}</dd>
+                    <dt>Primary Table</dt><dd>${d.primaryTableName}</dd>
+                    <dt>Secondary Tables</dt><dd>${d.secondaryTableNames.length > 0 ? d.secondaryTableNames.join(', ') : '–'}</dd>
+                    <dt>Lock Mode</dt><dd>${d.lockMode}</dd>
+                </dl>
+            </div>`;
+        }
+
+        // Initial load
+        loadList('domains');
+    </script>
+</body>
+</html>
