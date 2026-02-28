@@ -49,12 +49,14 @@ src/
 │   ├── internal/          ← Internal Schema (Domain, DataType, ValueRange, DataElement)
 │   ├── conceptual/        ← Conceptual Schema (TableDefinition, FieldDefinition, Structure)
 │   ├── external/          ← External Schema (ViewDefinition, SearchHelp, LockObject)
-│   └── registry/          ← Central DataDictionary registry
+│   ├── registry/          ← Central DataDictionary registry
+│   └── ddl/               ← DDL Generation (DdlGenerator, SqlDialect)
 └── test/java/com/sap/datadictionary/
     ├── internal/          ← Unit tests for Internal Schema
     ├── conceptual/        ← Unit tests for Conceptual Schema
     ├── external/          ← Unit tests for External Schema
-    └── registry/          ← Integration tests (full 3-schema scenario)
+    ├── registry/          ← Integration tests (full 3-schema scenario)
+    └── ddl/               ← Unit tests for DDL generation
 ```
 
 ---
@@ -108,14 +110,14 @@ src/
 | Validate that every `ViewDefinition` only references existing table fields | ✅ Done |
 | Cycle / dependency detection | ✅ Done |
 
-### Milestone 4 – DDL Generation
+### Milestone 4 ✅ – DDL Generation
 > Generate SQL DDL from the conceptual schema.
 
 | Deliverable | Status |
 |---|---|
-| SQL `CREATE TABLE` generation from `TableDefinition` | ⬜ Planned |
-| SQL `CREATE VIEW` generation from `ViewDefinition` | ⬜ Planned |
-| Dialect support (PostgreSQL, H2, SAP HANA) | ⬜ Planned |
+| SQL `CREATE TABLE` generation from `TableDefinition` | ✅ Done |
+| SQL `CREATE VIEW` generation from `ViewDefinition` | ✅ Done |
+| Dialect support (PostgreSQL, H2, SAP HANA) | ✅ Done |
 
 ### Milestone 5 – REST API & UI
 > Expose the Data Dictionary via a lightweight service.
